@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Penjejakan Kerja</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-blue-600 text-white p-6 text-center shadow-lg">
+        <h1 class="text-2xl font-bold uppercase">Sistem Penjejakan Status Kerja</h1>
+    </header>
+
+    <div class="container mx-auto p-4 max-w-2xl">
+        
+        <section id="customer-section" class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-blue-600">Semak Status Kerja Anda</h2>
+            <p class="mb-4 text-sm text-gray-600">Masukkan nombor telefon untuk melihat perkembangan terkini.</p>
+            <input type="text" id="searchPhone" placeholder="Contoh: 0123456789" class="w-full p-3 border rounded mb-4">
+            <button onclick="checkStatus()" class="w-full bg-blue-500 text-white p-3 rounded font-bold hover:bg-blue-700">SEMAK STATUS</button>
+            
+            <div id="statusResult" class="mt-6 hidden border-t pt-4">
+                </div>
+        </section>
+
+        <hr class="my-10">
+
+        <section id="staff-section" class="bg-gray-50 p-6 rounded-lg shadow-inner border border-dashed border-gray-400">
+            <h2 class="text-xl font-semibold mb-4 text-red-600">Kemaskini Kerja (Staf Sahaja)</h2>
+            <div class="space-y-4">
+                <input type="text" id="custPhone" placeholder="No. Telefon Pelanggan" class="w-full p-2 border rounded">
+                <input type="text" id="jobName" placeholder="Nama Kerja (cth: Banner Kedai)" class="w-full p-2 border rounded">
+                <input type="date" id="expDate" class="w-full p-2 border rounded">
+                
+                <select id="workProgress" class="w-full p-2 border rounded">
+                    <option value="In Line">In Line</option>
+                    <option value="Designing">Designing</option>
+                    <option value="Printing">Printing</option>
+                    <option value="Finishing">Finishing</option>
+                    <option value="Installation">Installation</option>
+                    <option value="Ready to Pickup">Ready to Pickup</option>
+                </select>
+
+                <button onclick="updateJob()" class="w-full bg-red-500 text-white p-3 rounded font-bold hover:bg-red-700">SIMPAN / KEMASKINI</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // MASUKKAN CONFIG FIREBASE ANDA DI SINI
+        cconst firebaseConfig = {
+          apiKey: "AIzaSyAQy5m_5eCQn933gsbugq8Fg0AiRTu3CKo",
+          authDomain: "track-job-progress.firebaseapp.com",
+          projectId: "track-job-progress",
+          storageBucket: "track-job-progress.firebasestorage.app",
+          messagingSenderId: "463137015561",
+          appId: "1:463137015561:web:256c816e2485de45a0f5d8",
+          measurementId: "G-93S6NJ0V6C"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // FUNGSI UNTUK STAFF UPDATE
+        async function updateJob() {
+            const phone = document.getElementById('custPhone').value;
+            const job = document.getElementById('jobName').value;
+            const date = document.getElementById('expDate').value;
+            const status = document.getElementById('workProgress').value;
+
+            if(!phone || !job) return alert("Sila isi No. Telefon dan Nama Kerja");
+
+            await db.collection("jobs").doc(phone).set({
+                phone: phone,
+                jobName: job,
+                expectedDate: date,
+                status: status,
+                lastUpdate: new Date()
+            });
+            alert("Data berjaya dikemaskini!");
+        }
+
+        // FUNGSI UNTUK CUSTOMER SEMAK
+        async function checkStatus() {
+            const phone = document.getElementById('searchPhone').value;
+            const resultDiv = document.getElementById('statusResult');
+            
+            const doc = await db.collection("jobs").doc(phone).get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `
+                    <div class="bg-blue-100 p-4 rounded">
+                        <p><strong>Job:</strong> ${data.jobName}</p>
+                        <p><strong>Status:</strong> <span class="text-blue-700 font-bold">${data.status}</span></p>
+                        <p><strong>Dijangka Siap:</strong> ${data.expectedDate}</p>
+                    </div>
+                `;
+            } else {
+                alert("Rekod tidak dijumpai. Sila pastikan nombor telefon betul.");
+            }
+        }
+    </script>
+</body>
+</html>
